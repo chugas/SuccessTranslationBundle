@@ -1,0 +1,29 @@
+{% if is_granted('ROLE_SUPER_ADMIN') %}
+<script src="//tinymce.cachefly.net/4.0/tinymce.min.js"></script>
+<script type="text/javascript">
+function saveTrans(tiny){
+  $.ajax({
+    url: "{{ path('lexik_translation_inline_update') }}",
+    data: { key: tiny.bodyElement.attributes['data-translation-key'].value, domain: tiny.bodyElement.attributes['data-translation-domain'].value, {{ app.request.locale }}: tiny.getContent() },
+    type: 'post',
+    dataType: 'json',
+    success: function(json){}
+  });    
+}
+tinymce.init({
+    selector: ".editable",
+    inline: true,
+    save_enablewhendirty: true,
+    save_onsavecallback: function(tiny) {
+      saveTrans(tiny);
+      return true;
+    },
+    plugins: [
+        "save advlist autolink lists link image charmap print preview anchor",
+        "searchreplace visualblocks code fullscreen",
+        "insertdatetime media table contextmenu paste"
+    ],
+    toolbar: "save insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image"
+});
+</script>
+{% endif %}
