@@ -1,0 +1,8 @@
+{% if is_granted('ROLE_SUPER_ADMIN') %}
+<div class="bar">
+  <!--<p style="margin:0px">Modo Editable</p>-->
+  <div class="pull-right">
+    <a href="{{ path('fos_user_security_logout') }}">Cerrar modo edicion</a>
+  </div>
+</div>
+{% endif %}

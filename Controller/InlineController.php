@@ -21,6 +21,12 @@ class InlineController extends Controller {
     $response->setPrivate();
     return $response;
   }
+  
+  public function editableAction() {
+    $response = $this->render('LexikTranslationBundle:Inline:editable.html.twig');
+    $response->setPrivate();
+    return $response;
+  }  
 
   /**
    * Update a trans unit element from the javascript grid.
