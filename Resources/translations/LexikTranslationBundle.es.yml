@@ -1,0 +1,13 @@
+translations.invalidate_cache: "Limpiar cache"
+translations.domain: "Dominio"
+translations.key: "Clave"
+translations.grid_caption: "Listado de palabras"
+translations.cache_removed: "El cache ha sido limpiado con exito"
+translations.new_translation: "Nueva Traduccion"
+translations.add_translation: "Agregar Traduccion"
+translations.add: "Agregar"
+translations.page_title: "Traducciones"
+translations.show_hide_columns: "Mostrar/Ocultar columnas"
+translations.save_row: "Guardar"
+translations.all_form_fields_required: Todos los campos son requeridos.
+translations.translate: "Traduccion"

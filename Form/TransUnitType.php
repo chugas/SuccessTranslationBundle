@@ -18,9 +18,11 @@ class TransUnitType extends AbstractType
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('key');
+        $builder->add('key', 'text', array('label' => 'translations.key', 'translation_domain' => 'LexikTranslationBundle'));
         $builder->add('domain', 'choice', array(
             'choices' => array_combine($options['domains'], $options['domains']),
+            'label' => 'translations.domain', 
+            'translation_domain' => 'LexikTranslationBundle'
         ));
         $builder->add('translations', 'collection', array(
             'type' => new TranslationType(),

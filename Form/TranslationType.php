@@ -23,6 +23,9 @@ class TranslationType extends AbstractType
         $builder->add('locale', 'hidden');
         $builder->add('content', 'textarea', array(
             'required' => false,
+            'label' => 'translations.translate', 
+            'translation_domain' => 'LexikTranslationBundle',
+            'attr' => array('class' => 'span4')
         ));
     }
 

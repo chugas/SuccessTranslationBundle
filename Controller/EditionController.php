@@ -55,10 +55,22 @@ class EditionController extends Controller
      */
     public function gridAction()
     {
+        $storage = $this->get('lexik_translation.translation_storage');
+        $transUnit = $this->get('lexik_translation.trans_unit.manager')->newInstance($this->getManagedLocales());
+
+        $options = array(
+            'domains'           => $storage->getTransUnitDomains(),
+            'data_class'        => $storage->getModelClass('trans_unit'),
+            'translation_class' => $storage->getModelClass('translation'),
+        );
+
+        $form = $this->createForm(new TransUnitType(), $transUnit, $options); 
+        
         return $this->render('LexikTranslationBundle:Edition:grid.html.twig', array(
             'layout'    => $this->container->getParameter('lexik_translation.base_layout'),
             'inputType' => $this->container->getParameter('lexik_translation.grid_input_type'),
             'locales'   => $this->getManagedLocales(),
+            'form'      => $form->createView()
         ));
     }
 
@@ -113,9 +125,9 @@ class EditionController extends Controller
     {
         $this->get('translator')->removeLocalesCacheFiles($this->getManagedLocales());
 
-        $this->get('session')->setFlash('success', $this->get('translator')->trans('translations.cache_removed', array(), 'LexikTranslationBundle'));
+        $this->get('session')->getFlashBag()->add('success', $this->get('translator')->trans('translations.cache_removed', array(), 'LexikTranslationBundle'));
 
-        return $this->redirect($this->generateUrl('lexik_translation_grid'));
+        return $this->redirect($this->generateUrl('admin_lexik_translation_translation_list'));
     }
 
     /**
@@ -137,7 +149,7 @@ class EditionController extends Controller
         $form = $this->createForm(new TransUnitType(), $transUnit, $options);
 
         if ($this->get('request')->getMethod() == 'POST') {
-            $form->bindRequest($this->get('request'));
+            $form->bind($this->get('request'));
 
             if ($form->isValid()) {
                 $translations = $transUnit->filterNotBlankTranslations(); // only keep translations with a content
@@ -160,7 +172,7 @@ class EditionController extends Controller
                 $storage->persist($transUnit);
                 $storage->flush();
 
-                return $this->redirect($this->generateUrl('lexik_translation_grid'));
+                return $this->redirect($this->generateUrl('admin_lexik_translation_translation_list'));
             }
         }
 

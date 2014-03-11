@@ -4,19 +4,19 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    {% stylesheets filter="?yui_css" output='css/optimized-jqgrid.css'
+    {% stylesheets filter="?yui_css" output='css/compiled/optimized-jqgrid.css'
         '@LexikTranslationBundle/Resources/public/lib/jqGrid/css/ui.jqgrid.css' %}
         <link rel="stylesheet" href="{{ asset_url }}">
     {% endstylesheets %}
 {% endblock %}
 
 {% block content %}
-{% if app.session.hasFlash('sucess') %}
-<span>{{ app.session.getFlash('sucess') }}</span>
-{% endif %}
+{% for flashMessage in app.session.flashbag.get('success') %}
+<span>{{ flashMessage }}</span>
+{% endfor %}
 
 <div>
-    <a href="{{ path('lexik_translation_new') }}" role="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-primary">
+    <a id="create-translation" href="#{{ path('lexik_translation_new') }}" role="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-primary">
         <span class="ui-button-icon-primary ui-icon ui-icon-circle-plus"></span>
         <span class="ui-button-text">{{ 'translations.new_translation'|trans({}, 'LexikTranslationBundle') }}</span>
     </a>
@@ -42,11 +42,24 @@
 
 <table id="trans-grid"></table>
 <div id="grid-nav"></div>
+
+<div id="dialog-form" title="{{ 'translations.add_translation'|trans({}, 'LexikTranslationBundle') }}" style="display: none;">
+  <p class="validateTips">{{ 'translations.all_form_fields_required'|trans({}, 'LexikTranslationBundle') }}</p>
+  <form id="translation-add-form" action="{{ path('lexik_translation_new') }}" method="post">
+    {{ form_row(form.key, {'attr': { 'class': 'span4', 'autocomplete' : 'off' } }) }}
+    {{ form_row(form.domain) }}
+    {% for translation in form.translations %}
+        {{ form_row(translation) }}
+    {% endfor %}
+    {{ form_rest(form) }}
+  </form>
+</div>
+
 {% endblock %}
 
-{% block javascript_footer %}
+{% block footer %}
     {{ parent() }}
-    {% javascripts filter="?yui_js" output='js/optimized-translator-1.js'
+    {% javascripts filter="?yui_js" output='js/compiled/optimized-translator-1.js'
         '@LexikTranslationBundle/Resources/public/lib/jqGrid/js/i18n/grid.locale-en.js'
         '@LexikTranslationBundle/Resources/public/lib/jqGrid/js/jquery.jqGrid.min.js' %}
         <script src="{{ asset_url }}" type="text/javascript"></script>
@@ -64,11 +77,11 @@ $(document).ready(function() {
     ];
 
     var columnModel = [
-        { name: "id", index: "id", width: 40, sortable: true, editable: false, search: false }
+        { name: "id", index: "id", width: 40, sortable: true, editable: false, search: false, hidden: true }
         ,{ name:"{{ 'translations.domain'|trans({}, 'LexikTranslationBundle') }}", index: "domain", width: 100, sortable: true, editable: false }
-        ,{ name:"{{ 'translations.key'|trans({}, 'LexikTranslationBundle') }}", index: "key", width: 150, sortable: true, editable: false }
+        ,{ name:"{{ 'translations.key'|trans({}, 'LexikTranslationBundle') }}", index: "key", width: 340, sortable: true, editable: false }
 {% for locale in locales %}
-        ,{ name: "{{ locale }}", index: "{{ locale }}", width: 160, sortable: false, editable:true, {{ inputType == 'textarea' ? 'edittype: "textarea", ' : '' }}search: true }
+        ,{ name: "{{ locale }}", index: "{{ locale }}", width: 540, sortable: false, editable:true, {{ inputType == 'textarea' ? 'edittype: "textarea", ' : '' }}search: true }
 {% endfor %}
     ];
 
@@ -79,16 +92,30 @@ $(document).ready(function() {
         datatype: "json",
         colNames: columnNames,
         colModel: columnModel,
-        rowNum: 20,
+        rowNum: 40,
         rowList: [20, 40, 60],
         pager: "#grid-nav",
         sortname: "id",
         viewrecords: true,
         sortorder: "asc",
         onSelectRow: function(id) {
+            var editParams = {
+                keys: true,
+                successfunc: function() {
+                    lastSelected = null;
+
+                    return true;
+                }, 
+                afterrestorefunc: function() {
+                    lastSelected = null;
+
+                    return true;
+                }
+            };
+
             if(id && id !== lastSelected) {
-                jQuery('#trans-grid').jqGrid("restoreRow", lastSelected);
-                jQuery('#trans-grid').jqGrid("editRow", id, true);
+                jQuery('#trans-grid').jqGrid("saveRow", lastSelected);
+                jQuery('#trans-grid').jqGrid("editRow", id, editParams);
                 lastSelected = id;
             }
         },
@@ -96,8 +123,8 @@ $(document).ready(function() {
         caption: "{{ 'translations.grid_caption'|trans({}, 'LexikTranslationBundle') }}"
     });
 
-    jQuery("#trans-grid").setGridWidth(960);
-    jQuery("#trans-grid").setGridHeight(400);
+    jQuery("#trans-grid").setGridWidth(1000);
+    jQuery("#trans-grid").setGridHeight(550);
     jQuery("#trans-grid").jqGrid("navGrid", "#grid-nav", { edit:false, add:false, del:false, search: false });
     jQuery("#trans-grid").jqGrid("filterToolbar", { defaultSearch: "cn" });
 
@@ -113,8 +140,76 @@ $(document).ready(function() {
             lastSaved = lastSelected;
         }
     });
-	{% endif %}
+    {% endif %}
 });
 //-->
 </script>
+
+<script>
+$(function() {
+  
+var key = $( "#trans_unit_key" ),
+allFields = $( [] ).add( key ),
+tips = $( ".validateTips" );
+
+function updateTips( t ) {
+  tips
+    .text( t )
+    .addClass( "ui-state-highlight" );
+    setTimeout(function() {
+      tips.removeClass( "ui-state-highlight", 1500 );
+    }, 500 );
+}
+
+function checkLength( o, n, min, max ) {
+  if(min == 0 && max == 0){
+    if ( o.val().length == min ) {
+      updateTips( "El campo " + n + " no puede ser vacio." );
+      return false;  
+    } else {
+      return true;
+    }
+  }
+  
+  if ( o.val().length > max || o.val().length < min ) {
+    o.addClass( "ui-state-error" );
+    updateTips( "Length of " + n + " must be between " +
+    min + " and " + max + "." );
+    return false;
+  } else {
+    return true;
+  }
+}
+
+$( "#dialog-form" ).dialog({
+  autoOpen: false,
+  height: 430,
+  width: 430,
+  modal: true,
+  buttons: {
+    "{{ 'translations.add'|trans({}, 'LexikTranslationBundle') }}": function() {
+      var bValid = true;
+      allFields.removeClass( "ui-state-error" );
+      bValid = bValid && checkLength( key, "Clave", 0, 0 );
+      if ( bValid ) {
+        $('#translation-add-form').submit();
+      }
+    },
+    Cancel: function() {
+      $( this ).dialog( "close" );
+    }
+  },
+  close: function() {
+    allFields.val( "" ).removeClass( "ui-state-error" );
+  }
+});
+  
+$( "#create-translation" )
+  .button()
+  .click(function() {
+    $( "#dialog-form" ).dialog( "open" );
+  });
+});
+</script>
+
 {% endblock %}
